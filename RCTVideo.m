@@ -239,9 +239,22 @@ static NSString *const playbackBufferEmptyKeyPath = @"playbackBufferEmpty";
   NSString *uri = [source objectForKey:@"uri"];
   NSString *type = [source objectForKey:@"type"];
 
-  NSURL *url = (isNetwork || isAsset) ?
-    [NSURL URLWithString:uri] :
-    [[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:uri ofType:type]];
+  NSURL *url = nil;
+  if (isNetwork) {
+      // Load based on the URL
+      url = [NSURL URLWithString:uri];
+  } else if (isAsset) {
+      // Local asset: 
+      // Can be asset in the bundle or the absolute path for a video stored in the app's repo
+
+      // Check whether the file is loaded from the bundle
+      NSString *localPath = [[NSBundle mainBundle] pathForResource:uri ofType:type];
+      if (localPath) {
+          // Replace the `uri` with the full path
+          uri = localPath;
+      }
+      url = [NSURL fileURLWithPath:uri];
+  }
 
   if (isAsset) {
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
